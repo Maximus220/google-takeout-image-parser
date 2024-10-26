@@ -15,7 +15,16 @@ def remove_char_and_after_last_dot(s):
     # Remove the character just before the last dot and everything after it
     return s[:last_dot_index-1]
 
-
+def remove_char_after_last_dot(s):
+    # Find the last dot in the string
+    last_dot_index = s.rfind('.')
+    
+    # If there's no dot or only one character before the dot, return the string as is
+    if last_dot_index <= 1:
+        return s
+    
+    # Remove the character just before the last dot and everything after it
+    return s[:last_dot_index]
 
 # Get the datetime from the google json
 def get_google_datetime(image_path, metadata, retry=True):
@@ -44,8 +53,14 @@ def get_google_datetime(image_path, metadata, retry=True):
         datetime_raw = img_meta["photoTakenTime"]["timestamp"] or img_meta["creationTime"]["timestamp"]
         return datetime.fromtimestamp(int(datetime_raw)).strftime("%Y:%m:%d %H:%M:%S")
     elif retry:
-        if "VID" in image_path:
+        if "HSR" in image_path:
+            return get_google_datetime(image_path+".supplemental-m", metadata, False)
+        elif "VID" in image_path:
             return get_google_datetime(image_path+".supplemental-metadata", metadata, False)
+        elif "signal" in image_path and "supplementa" in image_path:
+            return get_google_datetime(remove_char_after_last_dot(image_path)+".supplement", metadata, False)
+        elif "signal" in image_path:
+            return get_google_datetime(image_path+".supplementa", metadata, True)
         else:
             return get_google_datetime(remove_char_and_after_last_dot(image_path), metadata, False)
     return None 
