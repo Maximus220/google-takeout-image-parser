@@ -4,9 +4,23 @@ import os
 from subprocess import call
 from datetime import datetime
 
+def remove_char_and_after_last_dot(s):
+    # Find the last dot in the string
+    last_dot_index = s.rfind('.')
+    
+    # If there's no dot or only one character before the dot, return the string as is
+    if last_dot_index <= 1:
+        return s
+    
+    # Remove the character just before the last dot and everything after it
+    return s[:last_dot_index-1]
+
+
+
 # Get the datetime from the google json
-def get_google_datetime(image_path, metadata):
+def get_google_datetime(image_path, metadata, retry=True):
     generated_json_name = image_path + ".json"
+    print("hey: "+generated_json_name)
 
     # Edited google photos share the json with the original photo
     if '-edited' in image_path:
@@ -24,10 +38,16 @@ def get_google_datetime(image_path, metadata):
     if generated_json_name in metadata:
         # Read the metadata from the JSON file
         with open(generated_json_name) as f:
+            print("it has image data")
             img_meta = json.load(f)
 
         datetime_raw = img_meta["photoTakenTime"]["timestamp"] or img_meta["creationTime"]["timestamp"]
         return datetime.fromtimestamp(int(datetime_raw)).strftime("%Y:%m:%d %H:%M:%S")
+    elif retry:
+        if "VID" in image_path:
+            return get_google_datetime(image_path+".supplemental-metadata", metadata, False)
+        else:
+            return get_google_datetime(remove_char_and_after_last_dot(image_path), metadata, False)
     return None 
 
 # Get the datetime from fallback.json
